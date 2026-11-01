@@ -1,0 +1,9 @@
+.git
+.gitignore
+DIRECTADMIN.md
+README.md
+outputs
+work
+node_modules
+npm-debug.log*
+pnpm-debug.log*

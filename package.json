@@ -1,0 +1,22 @@
+{
+  "name": "site-home-video-automation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reusable Playwright + FFmpeg automation for polished website home-page videos.",
+  "scripts": {
+    "start": "node app.js",
+    "ui": "node app.js",
+    "install:browsers": "playwright install chromium",
+    "capture": "node src/capture.mjs",
+    "capture:example": "node src/capture.mjs --config sites/default.json",
+    "check": "node --check src/capture.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "^1.56.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
