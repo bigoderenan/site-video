@@ -28,7 +28,7 @@ Adicione estas variáveis de ambiente:
 | Variável | Valor |
 | --- | --- |
 | `APP_BASE_PATH` | `/site-video` |
-| `FILE_TTL_MINUTES` | `60` |
+| `FILE_TTL_MINUTES` | `10` |
 
 Depois clique em **Criar**.
 
@@ -68,4 +68,4 @@ hospedagem pode estar bloqueando navegadores headless.
 - Auto scroll descendo e subindo.
 - Saída MP4 H.264 a 60 FPS.
 - Bloqueio de URLs locais e redes privadas.
-- Vídeos removidos automaticamente após 60 minutos.
+- Arquivos removidos automaticamente após 10 minutos.

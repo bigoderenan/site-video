@@ -84,13 +84,16 @@
           </select>
         </div>
 
-        <div class="field field-wide video-setting desktop-mode-setting">
-          <label for="desktop-capture-mode">Método de captura desktop</label>
-          <select id="desktop-capture-mode" name="desktopCaptureMode">
-            <option value="recordVideo" selected>Gravação nativa (60 FPS)</option>
-            <option value="screencast">Screencast do compositor</option>
-          </select>
-        </div>
+        <details class="advanced-options field-wide video-setting desktop-mode-setting">
+          <summary>Opções avançadas</summary>
+          <div class="field advanced-field">
+            <label for="desktop-capture-mode">Método de captura desktop</label>
+            <select id="desktop-capture-mode" name="desktopCaptureMode">
+              <option value="screencast" selected>Screencast do compositor (padrão)</option>
+              <option value="recordVideo">Gravação nativa (60 FPS)</option>
+            </select>
+          </div>
+        </details>
 
         <div class="motion-summary field-wide video-setting">
           <span><i class="arrow down"></i> Metade do tempo descendo</span>
@@ -102,7 +105,7 @@
           <span>Gerar arquivos</span>
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4"/></svg>
         </button>
-        <p class="retention">Os arquivos são removidos automaticamente após 1 hora.</p>
+        <p class="retention">Os arquivos são removidos automaticamente após 10 minutos.</p>
       </form>
 
       <aside class="status-card" id="status-card" aria-live="polite">

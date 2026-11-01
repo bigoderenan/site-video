@@ -16,7 +16,7 @@ const baseConfigPath = path.join(root, 'sites', 'default.json');
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || '0.0.0.0';
 const configuredBasePath = normalizeBasePath(process.env.APP_BASE_PATH || '');
-const expiryMilliseconds = Math.max(5, Number(process.env.FILE_TTL_MINUTES || 60)) * 60_000;
+const expiryMilliseconds = Math.max(5, Number(process.env.FILE_TTL_MINUTES || 10)) * 60_000;
 const jobs = new Map();
 let activeJobId = null;
 
@@ -202,7 +202,7 @@ async function createJob(request, response) {
     if (!outputTypes.length) throw new Error('Selecione pelo menos um tipo de arquivo.');
     const desktopCaptureMode = ['recordVideo', 'screencast'].includes(body.desktopCaptureMode)
       ? body.desktopCaptureMode
-      : 'recordVideo';
+      : 'screencast';
     const durationSeconds = Math.round(Number(body.durationSeconds || 20));
     if (durationSeconds < 10 || durationSeconds > 60) throw new Error('A duração deve ficar entre 10 e 60 segundos.');
     const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutSine';

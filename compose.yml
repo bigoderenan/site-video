@@ -13,7 +13,7 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       APP_BASE_PATH: ""
-      FILE_TTL_MINUTES: 60
+      FILE_TTL_MINUTES: 10
     volumes:
       - outputs:/app/outputs
       - work:/app/work

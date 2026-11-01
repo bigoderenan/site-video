@@ -8,9 +8,9 @@ The web interface can also export PNG screenshots of the initial viewport in
 desktop (1920x1080) and mobile (1080x1920) modes. Video and screenshot outputs
 can be generated separately or in the same job.
 
-For desktop video, the web interface lets the user choose between Playwright's
-native 60 FPS recording (default) and Chromium compositor screencasting. Mobile
-video continues to use compositor screencasting automatically.
+For desktop video, the web interface uses Chromium compositor screencasting by
+default. An advanced option allows Playwright's native 60 FPS recording to be
+selected instead. Mobile video continues to use compositor screencasting.
 
 ## Requirements
 
@@ -96,7 +96,7 @@ pnpm start
 
 Open `http://localhost:3000`. The screen accepts a URL, output formats, total
 duration, and motion style. It permits one generation at a time and deletes
-finished MP4 files after 60 minutes.
+finished output files after 10 minutes.
 
 ## DirectAdmin deployment
 
@@ -109,7 +109,7 @@ with these values:
 - Application startup file: `app.js`
 - Environment variable `APP_BASE_PATH`: the URL path used by DirectAdmin, such
   as `/scripts/site-video`
-- Optional `FILE_TTL_MINUTES`: `60`
+- Optional `FILE_TTL_MINUTES`: `10`
 
 Activate the Node environment shown by DirectAdmin, enter the application root,
 and run:
