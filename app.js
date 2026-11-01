@@ -1,11 +1,12 @@
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { lookup } from 'node:dns/promises';
-import { createReadStream } from 'node:fs';
+import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { ZipArchive } from 'archiver';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(root, 'public');
@@ -132,6 +133,21 @@ function progressFromLine(line, job) {
   emit(job, 'progress', { progress: job.progress, message });
 }
 
+async function createZip(files, zipPath) {
+  await new Promise((resolve, reject) => {
+    const output = createWriteStream(zipPath);
+    const archive = new ZipArchive({ store: true });
+    output.once('close', resolve);
+    output.once('error', reject);
+    archive.once('error', reject);
+    archive.pipe(output);
+    for (const file of files) {
+      archive.file(path.join(outputDirectory, file.filename), { name: file.filename });
+    }
+    archive.finalize();
+  });
+}
+
 async function startJob(job, config) {
   activeJobId = job.id;
   const configPath = path.join(jobsDirectory, `${job.id}.json`);
@@ -164,7 +180,7 @@ async function startJob(job, config) {
     activeJobId = null;
     emit(job, 'failed', { message: error.message });
   });
-  child.once('exit', code => {
+  child.once('exit', async code => {
     activeJobId = null;
     job.child = null;
     if (code !== 0) {
@@ -181,9 +197,21 @@ async function startJob(job, config) {
         ? `${config.name}-${profile}-${dimensions}.png`
         : `${config.name}-${profile}-${dimensions}-${config.fps}fps.mp4`;
       setTimeout(() => unlink(path.join(outputDirectory, filename)).catch(() => {}), expiryMilliseconds).unref();
-      return { profile, type, filename, url: `outputs/${encodeURIComponent(filename)}` };
+      return { profile, type, fps: type === 'video' ? config.fps : undefined, filename, url: `outputs/${encodeURIComponent(filename)}` };
     }));
-    emit(job, 'complete', { progress: 100, message: 'Arquivos concluídos.', files, expiresAt });
+    let bundle;
+    try {
+      if (files.length > 1) {
+        const filename = `${config.name}-arquivos.zip`;
+        await createZip(files, path.join(outputDirectory, filename));
+        setTimeout(() => unlink(path.join(outputDirectory, filename)).catch(() => {}), expiryMilliseconds).unref();
+        bundle = { filename, url: `outputs/${encodeURIComponent(filename)}`, count: files.length };
+      }
+      emit(job, 'complete', { progress: 100, message: 'Arquivos concluídos.', files, bundle, expiresAt });
+    } catch (error) {
+      job.status = 'failed';
+      emit(job, 'failed', { message: `Os arquivos foram gerados, mas o ZIP falhou: ${error.message}` });
+    }
   });
 }
 
@@ -276,7 +304,8 @@ async function serveFile(response, filename, directory = publicDirectory) {
       '.js': 'text/javascript; charset=utf-8',
       '.svg': 'image/svg+xml',
       '.png': 'image/png',
-      '.mp4': 'video/mp4'
+      '.mp4': 'video/mp4',
+      '.zip': 'application/zip'
     };
     response.writeHead(200, {
       'Content-Type': contentTypes[extension] || 'application/octet-stream',
@@ -293,7 +322,7 @@ async function serveFile(response, filename, directory = publicDirectory) {
 async function removeExpiredOutputs() {
   const now = Date.now();
   for (const entry of await readdir(outputDirectory, { withFileTypes: true })) {
-    if (!entry.isFile() || !/\.(mp4|png)$/i.test(entry.name)) continue;
+    if (!entry.isFile() || !/\.(mp4|png|zip)$/i.test(entry.name)) continue;
     const filePath = path.join(outputDirectory, entry.name);
     const fileStat = await stat(filePath).catch(() => null);
     if (fileStat && now - fileStat.mtimeMs > expiryMilliseconds) await unlink(filePath).catch(() => {});

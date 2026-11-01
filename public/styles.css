@@ -88,6 +88,8 @@ select { appearance: none; padding: 0 40px 0 14px; background-image: linear-grad
 .result-files { display: grid; gap: 9px; margin-top: 24px; }
 .file-link { min-height: 48px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; color: var(--ink); text-decoration: none; display: flex; align-items: center; justify-content: space-between; text-align: left; transition: .2s; }
 .file-link:hover { border-color: var(--blue); background: #f6f9ff; }
+.bundle-link { border-color: var(--blue); background: #f6f9ff; }
+.bundle-link strong { color: var(--blue); }
 .file-link strong, .file-link small { display: block; }
 .file-link strong { font-size: 13px; }
 .file-link small { color: var(--muted); margin-top: 3px; }

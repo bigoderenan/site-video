@@ -8,6 +8,10 @@ The web interface can also export PNG screenshots of the initial viewport in
 desktop (1920x1080) and mobile (1080x1920) modes. Video and screenshot outputs
 can be generated separately or in the same job.
 
+Jobs with multiple outputs also provide a single ZIP download while preserving
+the individual download links. The ZIP follows the same expiration time as its
+files.
+
 For desktop video, the web interface uses Chromium compositor screencasting by
 default. An advanced option allows Playwright's native recording to be
 selected instead. The same advanced section accepts a custom integer frame rate

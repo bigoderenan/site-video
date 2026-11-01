@@ -106,7 +106,7 @@ form.addEventListener('submit', async event => {
     events.addEventListener('complete', event => {
       events.close();
       const update = JSON.parse(event.data);
-      resultFiles.replaceChildren(...update.files.map(file => {
+      const links = update.files.map(file => {
         const link = document.createElement('a');
         link.className = 'file-link';
         link.href = apiUrl(file.url);
@@ -114,10 +114,19 @@ form.addEventListener('submit', async event => {
         const mode = file.profile === 'desktop' ? 'desktop' : 'mobile';
         const title = file.type === 'screenshot' ? `Captura ${mode}` : `Vídeo ${mode}`;
         const dimensions = file.profile === 'desktop' ? '1920 × 1080' : '1080 × 1920';
-        const details = file.type === 'screenshot' ? `${dimensions} · PNG` : `${dimensions} · 60 FPS`;
+        const details = file.type === 'screenshot' ? `${dimensions} · PNG` : `${dimensions} · ${file.fps} FPS`;
         link.innerHTML = `<span><strong>${title}</strong><small>${details}</small></span><span class="download-icon">↓</span>`;
         return link;
-      }));
+      });
+      if (update.bundle) {
+        const bundle = document.createElement('a');
+        bundle.className = 'file-link bundle-link';
+        bundle.href = apiUrl(update.bundle.url);
+        bundle.download = update.bundle.filename;
+        bundle.innerHTML = `<span><strong>Baixar tudo</strong><small>${update.bundle.count} arquivos · ZIP</small></span><span class="download-icon">↓</span>`;
+        links.unshift(bundle);
+      }
+      resultFiles.replaceChildren(...links);
       const time = new Date(update.expiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       expiry.textContent = `Downloads disponíveis até ${time}.`;
       submitButton.disabled = false;
