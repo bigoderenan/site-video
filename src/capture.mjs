@@ -69,8 +69,8 @@ async function loadConfig(args) {
       height: 1920,
       videoViewportWidth: 393,
       videoViewportHeight: 854,
-      videoCaptureWidth: 884,
-      videoCaptureHeight: 1920,
+      videoCaptureWidth: 1080,
+      videoCaptureHeight: 2348,
       videoBorderHorizontalPercent: 0.09,
       screenshotViewportWidth: 393,
       screenshotViewportHeight: 854,
@@ -330,6 +330,26 @@ async function captureProfile(browser, config, profileName, profile, directories
     await rm(framesDirectory, { recursive: true, force: true });
     await mkdir(framesDirectory, { recursive: true });
     const session = await context.newCDPSession(page);
+    const layoutWidth = profile.videoViewportWidth ?? viewportWidth;
+    const layoutHeight = profile.videoViewportHeight ?? viewportHeight;
+    const rawCaptureWidth = Math.max(1, Math.round(profile.videoCaptureWidth ?? profile.captureWidth ?? profile.width));
+    const rawCaptureHeight = Math.max(1, Math.round(profile.videoCaptureHeight ?? profile.captureHeight ?? profile.height));
+    if (rawCaptureWidth > layoutWidth || rawCaptureHeight > layoutHeight) {
+      await session.send('Emulation.setDeviceMetricsOverride', {
+        width: layoutWidth,
+        height: layoutHeight,
+        deviceScaleFactor: profile.deviceScaleFactor ?? 1,
+        mobile: profile.isMobile ?? false,
+        screenWidth: layoutWidth,
+        screenHeight: layoutHeight,
+        dontSetVisibleSize: true
+      });
+      await session.send('Emulation.setVisibleSize', {
+        width: rawCaptureWidth,
+        height: rawCaptureHeight
+      });
+      console.log(`[${profileName}] Raw screencast ${rawCaptureWidth}x${rawCaptureHeight} from ${layoutWidth}x${layoutHeight} CSS viewport`);
+    }
     const frameWrites = [];
     let frameCount = 0;
     session.on('Page.screencastFrame', event => {
@@ -341,8 +361,8 @@ async function captureProfile(browser, config, profileName, profile, directories
     await session.send('Page.startScreencast', {
       format: 'jpeg',
       quality: 95,
-      maxWidth: profile.videoCaptureWidth ?? profile.captureWidth ?? profile.width,
-      maxHeight: profile.videoCaptureHeight ?? profile.captureHeight ?? profile.height,
+      maxWidth: rawCaptureWidth,
+      maxHeight: rawCaptureHeight,
       everyNthFrame: 1
     });
     await playTimeline(page, config.timeline, config.durationSeconds);
