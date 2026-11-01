@@ -348,6 +348,9 @@ async function captureProfile(browser, config, profileName, profile, directories
         width: rawCaptureWidth,
         height: rawCaptureHeight
       });
+      await session.send('Emulation.setPageScaleFactor', {
+        pageScaleFactor: Math.min(rawCaptureWidth / layoutWidth, rawCaptureHeight / layoutHeight)
+      });
       console.log(`[${profileName}] Raw screencast ${rawCaptureWidth}x${rawCaptureHeight} from ${layoutWidth}x${layoutHeight} CSS viewport`);
     }
     const frameWrites = [];
