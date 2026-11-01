@@ -10,7 +10,10 @@ const progressNumber = document.querySelector('#progress-number');
 const resultFiles = document.querySelector('#result-files');
 const expiry = document.querySelector('#expiry');
 const outputInputs = [...form.querySelectorAll('input[name="output"]')];
-const videoSettings = [...form.querySelectorAll('.video-setting')];
+const profileInputs = [...form.querySelectorAll('input[name="profile"]')];
+const videoSettings = [...form.querySelectorAll('.video-setting:not(.desktop-mode-setting)')];
+const desktopModeSetting = form.querySelector('.desktop-mode-setting');
+const desktopCaptureMode = form.elements.desktopCaptureMode;
 const submitLabel = submitButton.querySelector('span');
 
 const apiUrl = relative => new URL(relative, window.location.href).toString();
@@ -46,6 +49,9 @@ function syncOutputOptions() {
   for (const setting of videoSettings) setting.hidden = !videoEnabled;
   form.duration.disabled = !videoEnabled;
   form.easing.disabled = !videoEnabled;
+  const desktopEnabled = profileInputs.some(input => input.value === 'desktop' && input.checked);
+  desktopModeSetting.hidden = !videoEnabled || !desktopEnabled;
+  desktopCaptureMode.disabled = !videoEnabled || !desktopEnabled;
   const screenshotEnabled = outputInputs.some(input => input.value === 'screenshot' && input.checked);
   submitLabel.textContent = videoEnabled && screenshotEnabled
     ? 'Gerar vídeos e capturas'
@@ -53,6 +59,7 @@ function syncOutputOptions() {
 }
 
 for (const input of outputInputs) input.addEventListener('change', syncOutputOptions);
+for (const input of profileInputs) input.addEventListener('change', syncOutputOptions);
 syncOutputOptions();
 
 form.addEventListener('submit', async event => {
@@ -69,6 +76,7 @@ form.addEventListener('submit', async event => {
     name: form.name.value,
     profiles,
     outputTypes,
+    desktopCaptureMode: desktopCaptureMode.value,
     durationSeconds: Number(form.duration.value),
     easing: form.easing.value
   };

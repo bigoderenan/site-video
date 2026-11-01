@@ -200,6 +200,9 @@ async function createJob(request, response) {
     const requestedOutputTypes = Array.isArray(body.outputTypes) ? body.outputTypes : ['video'];
     const outputTypes = ['video', 'screenshot'].filter(type => requestedOutputTypes.includes(type));
     if (!outputTypes.length) throw new Error('Selecione pelo menos um tipo de arquivo.');
+    const desktopCaptureMode = ['recordVideo', 'screencast'].includes(body.desktopCaptureMode)
+      ? body.desktopCaptureMode
+      : 'recordVideo';
     const durationSeconds = Math.round(Number(body.durationSeconds || 20));
     if (durationSeconds < 10 || durationSeconds > 60) throw new Error('A duração deve ficar entre 10 e 60 segundos.');
     const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutSine';
@@ -211,6 +214,15 @@ async function createJob(request, response) {
       url,
       durationSeconds,
       fps: 60,
+      profiles: {
+        ...baseConfig.profiles,
+        desktop: {
+          ...baseConfig.profiles.desktop,
+          captureMode: desktopCaptureMode,
+          captureWidth: baseConfig.profiles.desktop.width,
+          captureHeight: baseConfig.profiles.desktop.height
+        }
+      },
       timeline: [
         { to: 1, duration: halfDuration, easing },
         { to: 0, duration: halfDuration, easing }

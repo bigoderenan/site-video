@@ -8,6 +8,10 @@ The web interface can also export PNG screenshots of the initial viewport in
 desktop (1920x1080) and mobile (1080x1920) modes. Video and screenshot outputs
 can be generated separately or in the same job.
 
+For desktop video, the web interface lets the user choose between Playwright's
+native 60 FPS recording (default) and Chromium compositor screencasting. Mobile
+video continues to use compositor screencasting automatically.
+
 ## Requirements
 
 - Node.js 20+
