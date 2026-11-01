@@ -11,9 +11,11 @@ const resultFiles = document.querySelector('#result-files');
 const expiry = document.querySelector('#expiry');
 const outputInputs = [...form.querySelectorAll('input[name="output"]')];
 const profileInputs = [...form.querySelectorAll('input[name="profile"]')];
-const videoSettings = [...form.querySelectorAll('.video-setting:not(.desktop-mode-setting)')];
+const videoSettings = [...form.querySelectorAll('.video-setting')];
 const desktopModeSetting = form.querySelector('.desktop-mode-setting');
 const desktopCaptureMode = form.elements.desktopCaptureMode;
+const fpsInput = form.elements.fps;
+const fpsSummary = document.querySelector('#fps-summary');
 const submitLabel = submitButton.querySelector('span');
 
 const apiUrl = relative => new URL(relative, window.location.href).toString();
@@ -49,6 +51,7 @@ function syncOutputOptions() {
   for (const setting of videoSettings) setting.hidden = !videoEnabled;
   form.duration.disabled = !videoEnabled;
   form.easing.disabled = !videoEnabled;
+  fpsInput.disabled = !videoEnabled;
   const desktopEnabled = profileInputs.some(input => input.value === 'desktop' && input.checked);
   desktopModeSetting.hidden = !videoEnabled || !desktopEnabled;
   desktopCaptureMode.disabled = !videoEnabled || !desktopEnabled;
@@ -58,9 +61,15 @@ function syncOutputOptions() {
     : videoEnabled ? 'Gerar vídeos' : 'Gerar capturas';
 }
 
+function syncFps() {
+  fpsSummary.textContent = `${fpsInput.value} FPS`;
+}
+
 for (const input of outputInputs) input.addEventListener('change', syncOutputOptions);
 for (const input of profileInputs) input.addEventListener('change', syncOutputOptions);
+fpsInput.addEventListener('change', syncFps);
 syncOutputOptions();
+syncFps();
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
@@ -77,6 +86,7 @@ form.addEventListener('submit', async event => {
     profiles,
     outputTypes,
     desktopCaptureMode: desktopCaptureMode.value,
+    fps: Number(fpsInput.value),
     durationSeconds: Number(form.duration.value),
     easing: form.easing.value
   };

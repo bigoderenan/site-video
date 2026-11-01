@@ -57,7 +57,7 @@
           <legend>Arquivos</legend>
           <label class="output-option">
             <input type="checkbox" name="output" value="video" checked>
-            <span><strong>Vídeo</strong><small>MP4 · H.264 · 60 FPS</small></span>
+            <span><strong>Vídeo</strong><small>MP4 · H.264 · 24, 30 ou 60 FPS</small></span>
           </label>
           <label class="output-option">
             <input type="checkbox" name="output" value="screenshot">
@@ -84,21 +84,31 @@
           </select>
         </div>
 
-        <details class="advanced-options field-wide video-setting desktop-mode-setting">
+        <details class="advanced-options field-wide video-setting">
           <summary>Opções avançadas</summary>
-          <div class="field advanced-field">
-            <label for="desktop-capture-mode">Método de captura desktop</label>
-            <select id="desktop-capture-mode" name="desktopCaptureMode">
-              <option value="screencast" selected>Screencast do compositor (padrão)</option>
-              <option value="recordVideo">Gravação nativa (60 FPS)</option>
-            </select>
+          <div class="advanced-grid">
+            <div class="field desktop-mode-setting">
+              <label for="desktop-capture-mode">Método de captura desktop</label>
+              <select id="desktop-capture-mode" name="desktopCaptureMode">
+                <option value="screencast" selected>Screencast do compositor (padrão)</option>
+                <option value="recordVideo">Gravação nativa</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="fps">Taxa de quadros</label>
+              <select id="fps" name="fps">
+                <option value="60" selected>60 FPS (padrão)</option>
+                <option value="30">30 FPS</option>
+                <option value="24">24 FPS</option>
+              </select>
+            </div>
           </div>
         </details>
 
         <div class="motion-summary field-wide video-setting">
           <span><i class="arrow down"></i> Metade do tempo descendo</span>
           <span><i class="arrow up"></i> Metade do tempo subindo</span>
-          <span>60 FPS</span>
+          <span id="fps-summary">60 FPS</span>
         </div>
 
         <button class="generate" type="submit">
