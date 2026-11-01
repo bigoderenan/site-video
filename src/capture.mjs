@@ -63,8 +63,8 @@ async function loadConfig(args) {
   config.cookieConsent ??= true;
   config.timeline ??= DEFAULT_TIMELINE;
   config.profiles ??= {
-    desktop: { width: 1920, height: 1080, videoBorderPercent: 0.062, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-    mobile: { width: 1080, height: 1920, deviceScaleFactor: 1, isMobile: true, hasTouch: true }
+    desktop: { width: 1920, height: 1080, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+    mobile: { width: 1080, height: 1920, videoBorderPercent: 0.09, deviceScaleFactor: 1, isMobile: true, hasTouch: true }
   };
   return config;
 }

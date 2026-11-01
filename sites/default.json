@@ -13,7 +13,6 @@
     "desktop": {
       "width": 1920,
       "height": 1080,
-      "videoBorderPercent": 0.062,
       "deviceScaleFactor": 1,
       "isMobile": false,
       "hasTouch": false
@@ -25,6 +24,7 @@
       "viewportHeight": 699,
       "captureWidth": 1080,
       "captureHeight": 1920,
+      "videoBorderPercent": 0.09,
       "captureMode": "screencast",
       "deviceScaleFactor": 2.75,
       "isMobile": true,
