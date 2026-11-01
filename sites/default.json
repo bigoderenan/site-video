@@ -6,8 +6,8 @@
   "settleMilliseconds": 1500,
   "cookieConsent": true,
   "timeline": [
-    { "to": 1, "duration": 10000, "easing": "easeInOutSine" },
-    { "to": 0, "duration": 10000, "easing": "easeInOutSine" }
+    { "to": 1, "duration": 10000, "easing": "easeInOutCubic" },
+    { "to": 0, "duration": 10000, "easing": "easeInOutCubic" }
   ],
   "profiles": {
     "desktop": {

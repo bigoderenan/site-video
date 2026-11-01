@@ -238,7 +238,7 @@ async function createJob(request, response) {
       throw new Error('O FPS deve ser um número inteiro entre 1 e 120.');
     }
     const fps = requestedFps;
-    const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutSine';
+    const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutCubic';
     const baseConfig = JSON.parse(await readFile(baseConfigPath, 'utf8'));
     const halfDuration = durationSeconds * 500;
     const config = {
