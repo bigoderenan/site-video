@@ -13,6 +13,7 @@
     "desktop": {
       "width": 1920,
       "height": 1080,
+      "videoBorderPercent": 0.062,
       "deviceScaleFactor": 1,
       "isMobile": false,
       "hasTouch": false

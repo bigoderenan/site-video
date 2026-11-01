@@ -44,6 +44,10 @@ The command creates:
 Both files are 20 seconds long, H.264 MP4, yuv420p, 60 FPS, and web-optimized
 with `faststart` metadata.
 
+Desktop videos include a 6.2% black safe border on every side, matching the
+reference device frame. The content is scaled proportionally and the final
+deliverable remains 1920x1080. Mobile videos and screenshots are unchanged.
+
 The mobile profile uses a 393x699 CSS viewport to trigger the site's real
 responsive layout and a 2.75x device scale factor to render at approximately
 1080x1920 physical pixels. It uses Chromium compositor screencasting so those

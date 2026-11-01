@@ -63,7 +63,7 @@ async function loadConfig(args) {
   config.cookieConsent ??= true;
   config.timeline ??= DEFAULT_TIMELINE;
   config.profiles ??= {
-    desktop: { width: 1920, height: 1080, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+    desktop: { width: 1920, height: 1080, videoBorderPercent: 0.062, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
     mobile: { width: 1080, height: 1920, deviceScaleFactor: 1, isMobile: true, hasTouch: true }
   };
   return config;
@@ -153,16 +153,23 @@ async function run(command, args) {
   });
 }
 
-async function transcode(input, output, config, profile, trimStartSeconds) {
-  const tempOutput = output.replace(/\.mp4$/i, '.tmp.mp4');
-  const filter = [
+function buildVideoFilter(config, profile) {
+  const borderPercent = Math.max(0, Math.min(0.2, Number(profile.videoBorderPercent ?? 0)));
+  const contentWidth = Math.max(2, Math.floor(profile.width * (1 - borderPercent * 2) / 2) * 2);
+  const contentHeight = Math.max(2, Math.floor(profile.height * (1 - borderPercent * 2) / 2) * 2);
+  return [
     'setpts=PTS-STARTPTS',
     'tpad=stop_mode=clone:stop_duration=1',
     `fps=${config.fps}`,
-    `scale=${profile.width}:${profile.height}:force_original_aspect_ratio=decrease:flags=lanczos`,
+    `scale=${contentWidth}:${contentHeight}:force_original_aspect_ratio=decrease:flags=lanczos`,
     `pad=${profile.width}:${profile.height}:(ow-iw)/2:(oh-ih)/2:color=black`,
     'setsar=1'
   ].join(',');
+}
+
+async function transcode(input, output, config, profile, trimStartSeconds) {
+  const tempOutput = output.replace(/\.mp4$/i, '.tmp.mp4');
+  const filter = buildVideoFilter(config, profile);
   await rm(tempOutput, { force: true });
   await run(ffmpegPath, [
     '-hide_banner', '-loglevel', 'warning', '-y',
@@ -180,14 +187,7 @@ async function transcode(input, output, config, profile, trimStartSeconds) {
 async function transcodeFrames(framesDirectory, frameCount, output, config, profile) {
   const tempOutput = output.replace(/\.mp4$/i, '.tmp.mp4');
   const inputFps = frameCount / config.durationSeconds;
-  const filter = [
-    'setpts=PTS-STARTPTS',
-    'tpad=stop_mode=clone:stop_duration=1',
-    `fps=${config.fps}`,
-    `scale=${profile.width}:${profile.height}:force_original_aspect_ratio=decrease:flags=lanczos`,
-    `pad=${profile.width}:${profile.height}:(ow-iw)/2:(oh-ih)/2:color=black`,
-    'setsar=1'
-  ].join(',');
+  const filter = buildVideoFilter(config, profile);
   await rm(tempOutput, { force: true });
   await run(ffmpegPath, [
     '-hide_banner', '-loglevel', 'warning', '-y',
