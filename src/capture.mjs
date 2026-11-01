@@ -17,13 +17,14 @@ const DEFAULT_TIMELINE = [
 ];
 
 function parseArgs(argv) {
-  const args = { profiles: [] };
+  const args = { profiles: [], types: [] };
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index];
     if (item === '--config') args.config = argv[++index];
     else if (item === '--url') args.url = argv[++index];
     else if (item === '--name') args.name = argv[++index];
     else if (item === '--profile') args.profiles.push(argv[++index]);
+    else if (item === '--type') args.types.push(argv[++index]);
     else if (item === '--output-dir') args.outputDir = argv[++index];
     else if (item === '--headed') args.headless = false;
     else if (item === '--help' || item === '-h') args.help = true;
@@ -42,6 +43,7 @@ Options:
   --url <url>           Override the configured URL
   --name <slug>         Override the output filename prefix
   --profile <name>      Capture only one profile (repeatable)
+  --type <name>         Output type: video or screenshot (repeatable; default: video)
   --output-dir <dir>    Output directory (default: outputs)
   --headed              Show Chromium while capturing
   --help                Show this message`);
@@ -202,12 +204,34 @@ async function transcodeFrames(framesDirectory, frameCount, output, config, prof
   await rename(tempOutput, output);
 }
 
-async function captureProfile(browser, config, profileName, profile, directories) {
+async function normalizeScreenshot(input, output, profile) {
+  const tempOutput = output.replace(/\.png$/i, '.tmp.png');
+  const filter = [
+    `scale=${profile.width}:${profile.height}:force_original_aspect_ratio=decrease:flags=lanczos`,
+    `pad=${profile.width}:${profile.height}:(ow-iw)/2:(oh-ih)/2:color=white`,
+    'setsar=1'
+  ].join(',');
+  await rm(tempOutput, { force: true });
+  await run(ffmpegPath, [
+    '-hide_banner', '-loglevel', 'warning', '-y',
+    '-i', input,
+    '-vf', filter,
+    '-frames:v', '1',
+    tempOutput
+  ]);
+  await rm(output, { force: true });
+  await rename(tempOutput, output);
+  await rm(input, { force: true });
+}
+
+async function captureProfile(browser, config, profileName, profile, directories, outputTypes) {
   const rawDirectory = path.join(directories.work, profileName);
   await mkdir(rawDirectory, { recursive: true });
   const viewportWidth = profile.viewportWidth ?? profile.width;
   const viewportHeight = profile.viewportHeight ?? profile.height;
-  const useScreencast = profile.captureMode === 'screencast';
+  const captureVideo = outputTypes.includes('video');
+  const captureScreenshot = outputTypes.includes('screenshot');
+  const useScreencast = captureVideo && profile.captureMode === 'screencast';
   const contextOptions = {
     viewport: { width: viewportWidth, height: viewportHeight },
     screen: { width: viewportWidth, height: viewportHeight },
@@ -219,7 +243,7 @@ async function captureProfile(browser, config, profileName, profile, directories
     colorScheme: profile.colorScheme ?? 'light',
     reducedMotion: 'no-preference'
   };
-  if (!useScreencast) {
+  if (captureVideo && !useScreencast) {
     contextOptions.recordVideo = {
       dir: rawDirectory,
       size: {
@@ -234,9 +258,34 @@ async function captureProfile(browser, config, profileName, profile, directories
   page.on('console', message => {
     if (message.type() === 'error') console.warn(`[browser:${profileName}] ${message.text()}`);
   });
-  const video = page.video();
+  const video = captureVideo && !useScreencast ? page.video() : null;
   console.log(`\n[${profileName}] Loading ${config.url}`);
   await preparePage(page, config);
+  const outputs = [];
+
+  if (captureScreenshot) {
+    const rawScreenshot = path.join(rawDirectory, 'screenshot.raw.png');
+    const screenshotOutput = path.join(directories.output, `${config.name}-${profileName}-${profile.width}x${profile.height}.png`);
+    console.log(`[${profileName}] Screenshot ${path.basename(screenshotOutput)}`);
+    await page.screenshot({
+      path: rawScreenshot,
+      type: 'png',
+      animations: 'disabled',
+      caret: 'hide',
+      fullPage: false,
+      scale: 'device'
+    });
+    await normalizeScreenshot(rawScreenshot, screenshotOutput, profile);
+    const screenshotStat = await stat(screenshotOutput);
+    console.log(`[${profileName}] Screenshot done (${(screenshotStat.size / 1024 / 1024).toFixed(1)} MB)`);
+    outputs.push(screenshotOutput);
+  }
+
+  if (!captureVideo) {
+    await context.close();
+    return outputs;
+  }
+
   const captureStartSeconds = (performance.now() - recordingStartedAt) / 1000;
   console.log(`[${profileName}] Recording ${config.durationSeconds}s timeline`);
   const output = path.join(directories.output, `${config.name}-${profileName}-${profile.width}x${profile.height}-${config.fps}fps.mp4`);
@@ -279,7 +328,8 @@ async function captureProfile(browser, config, profileName, profile, directories
   }
   const outputStat = await stat(output);
   console.log(`[${profileName}] Done (${(outputStat.size / 1024 / 1024).toFixed(1)} MB)`);
-  return output;
+  outputs.push(output);
+  return outputs;
 }
 
 async function main() {
@@ -294,18 +344,22 @@ async function main() {
   await mkdir(directories.output, { recursive: true });
   await mkdir(directories.work, { recursive: true });
   const selectedProfiles = args.profiles.length ? args.profiles : Object.keys(config.profiles);
+  const selectedOutputTypes = args.types.length ? [...new Set(args.types)] : ['video'];
   for (const profileName of selectedProfiles) {
     if (!config.profiles[profileName]) throw new Error(`Unknown profile: ${profileName}`);
+  }
+  for (const outputType of selectedOutputTypes) {
+    if (!['video', 'screenshot'].includes(outputType)) throw new Error(`Unknown output type: ${outputType}`);
   }
   if (!ffmpegPath) throw new Error('ffmpeg-static did not provide an FFmpeg executable.');
 
   console.log(`Capturing ${config.url}`);
-  console.log(`Profiles: ${selectedProfiles.join(', ')} | ${config.durationSeconds}s | ${config.fps} FPS`);
+  console.log(`Profiles: ${selectedProfiles.join(', ')} | Outputs: ${selectedOutputTypes.join(', ')}`);
   const browser = await chromium.launch({ headless: args.headless !== false });
   const outputs = [];
   try {
     for (const profileName of selectedProfiles) {
-      outputs.push(await captureProfile(browser, config, profileName, config.profiles[profileName], directories));
+      outputs.push(...await captureProfile(browser, config, profileName, config.profiles[profileName], directories, selectedOutputTypes));
     }
   } finally {
     await browser.close();

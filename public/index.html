@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Site Video Studio</title>
-  <meta name="description" content="Gere vídeos desktop e mobile de qualquer home page.">
+  <meta name="description" content="Gere vídeos e capturas de tela desktop e mobile de qualquer página pública.">
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
@@ -19,12 +19,12 @@
     </header>
 
     <section class="hero">
-      <p class="eyebrow">Gravação automatizada</p>
-      <h1>Transforme qualquer home <br>em um vídeo impecável.</h1>
-      <p class="intro">Cole a URL, escolha os formatos e deixe o navegador fazer o resto.</p>
+      <p class="eyebrow">Captura automatizada</p>
+      <h1>Transforme qualquer página <br>em vídeo ou imagem.</h1>
+      <p class="intro">Cole a URL, escolha as saídas e deixe o navegador fazer o resto.</p>
     </section>
 
-    <section class="workspace" aria-label="Configuração do vídeo">
+    <section class="workspace" aria-label="Configuração da captura">
       <form id="generator-form" class="form-card">
         <div class="field field-wide">
           <label for="url">Endereço do site</label>
@@ -53,7 +53,19 @@
           </label>
         </fieldset>
 
-        <div class="field compact">
+        <fieldset class="field output-types">
+          <legend>Arquivos</legend>
+          <label class="output-option">
+            <input type="checkbox" name="output" value="video" checked>
+            <span><strong>Vídeo</strong><small>MP4 · H.264 · 60 FPS</small></span>
+          </label>
+          <label class="output-option">
+            <input type="checkbox" name="output" value="screenshot">
+            <span><strong>Captura de tela</strong><small>PNG na posição inicial</small></span>
+          </label>
+        </fieldset>
+
+        <div class="field compact video-setting">
           <label for="duration">Duração</label>
           <select id="duration" name="duration">
             <option value="20" selected>20 segundos</option>
@@ -63,7 +75,7 @@
           </select>
         </div>
 
-        <div class="field compact">
+        <div class="field compact video-setting">
           <label for="easing">Movimento</label>
           <select id="easing" name="easing">
             <option value="easeInOutSine" selected>Suave</option>
@@ -72,14 +84,14 @@
           </select>
         </div>
 
-        <div class="motion-summary field-wide">
+        <div class="motion-summary field-wide video-setting">
           <span><i class="arrow down"></i> Metade do tempo descendo</span>
           <span><i class="arrow up"></i> Metade do tempo subindo</span>
           <span>60 FPS</span>
         </div>
 
         <button class="generate" type="submit">
-          <span>Gerar vídeos</span>
+          <span>Gerar arquivos</span>
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4"/></svg>
         </button>
         <p class="retention">Os arquivos são removidos automaticamente após 1 hora.</p>
@@ -88,7 +100,7 @@
       <aside class="status-card" id="status-card" aria-live="polite">
         <div class="idle-state" id="idle-state">
           <div class="preview-frame"><span></span><span></span><span></span><i></i></div>
-          <h2>Seu vídeo aparecerá aqui</h2>
+          <h2>Seus arquivos aparecerão aqui</h2>
           <p>O processo roda sozinho e pode levar alguns minutos.</p>
         </div>
 
@@ -103,7 +115,7 @@
         <div class="result-state" id="result-state" hidden>
           <div class="success-mark">✓</div>
           <p class="status-kicker">Concluído</p>
-          <h2>Seus vídeos estão prontos.</h2>
+          <h2>Seus arquivos estão prontos.</h2>
           <div id="result-files" class="result-files"></div>
           <p class="expiry" id="expiry"></p>
           <button class="new-job" type="button" id="new-job">Gerar outro site</button>

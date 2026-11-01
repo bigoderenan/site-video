@@ -106,6 +106,15 @@ function progressFromLine(line, job) {
     const mobile = line.includes('[mobile]');
     progress = profileCount === 1 ? 12 : mobile ? 56 : 8;
     message = mobile ? 'Abrindo o site no formato mobile…' : 'Abrindo o site no formato desktop…';
+  } else if (/Screenshot done/.test(line)) {
+    const mobile = line.includes('[mobile]');
+    const screenshotOnly = job.outputTypes.length === 1 && job.outputTypes[0] === 'screenshot';
+    progress = screenshotOnly ? (profileCount === 1 ? 94 : mobile ? 96 : 49) : (profileCount === 1 ? 18 : mobile ? 62 : 12);
+    message = mobile ? 'Captura mobile pronta.' : 'Captura desktop pronta.';
+  } else if (/Screenshot /.test(line)) {
+    const mobile = line.includes('[mobile]');
+    progress = profileCount === 1 ? 15 : mobile ? 60 : 10;
+    message = mobile ? 'Capturando a tela mobile…' : 'Capturando a tela desktop…';
   } else if (/Recording /.test(line)) {
     const mobile = line.includes('[mobile]');
     progress = profileCount === 1 ? 30 : mobile ? 66 : 20;
@@ -129,6 +138,7 @@ async function startJob(job, config) {
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
   const args = [captureScript, '--config', configPath];
   for (const profile of job.profiles) args.push('--profile', profile);
+  for (const outputType of job.outputTypes) args.push('--type', outputType);
   emit(job, 'progress', { progress: 3, message: 'Preparando a geração…' });
   const child = spawn(process.execPath, args, {
     cwd: root,
@@ -165,13 +175,15 @@ async function startJob(job, config) {
     job.status = 'complete';
     job.progress = 100;
     const expiresAt = Date.now() + expiryMilliseconds;
-    const files = job.profiles.map(profile => {
+    const files = job.profiles.flatMap(profile => job.outputTypes.map(type => {
       const dimensions = profile === 'desktop' ? '1920x1080' : '1080x1920';
-      const filename = `${config.name}-${profile}-${dimensions}-${config.fps}fps.mp4`;
+      const filename = type === 'screenshot'
+        ? `${config.name}-${profile}-${dimensions}.png`
+        : `${config.name}-${profile}-${dimensions}-${config.fps}fps.mp4`;
       setTimeout(() => unlink(path.join(outputDirectory, filename)).catch(() => {}), expiryMilliseconds).unref();
-      return { profile, filename, url: `outputs/${encodeURIComponent(filename)}` };
-    });
-    emit(job, 'complete', { progress: 100, message: 'Vídeos concluídos.', files, expiresAt });
+      return { profile, type, filename, url: `outputs/${encodeURIComponent(filename)}` };
+    }));
+    emit(job, 'complete', { progress: 100, message: 'Arquivos concluídos.', files, expiresAt });
   });
 }
 
@@ -185,6 +197,9 @@ async function createJob(request, response) {
     if (!name) throw new Error('Informe um nome para o projeto.');
     const profiles = ['desktop', 'mobile'].filter(profile => body.profiles?.includes(profile));
     if (!profiles.length) throw new Error('Selecione pelo menos um formato.');
+    const requestedOutputTypes = Array.isArray(body.outputTypes) ? body.outputTypes : ['video'];
+    const outputTypes = ['video', 'screenshot'].filter(type => requestedOutputTypes.includes(type));
+    if (!outputTypes.length) throw new Error('Selecione pelo menos um tipo de arquivo.');
     const durationSeconds = Math.round(Number(body.durationSeconds || 20));
     if (durationSeconds < 10 || durationSeconds > 60) throw new Error('A duração deve ficar entre 10 e 60 segundos.');
     const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutSine';
@@ -202,7 +217,7 @@ async function createJob(request, response) {
       ]
     };
     const id = crypto.randomUUID();
-    const job = { id, status: 'running', progress: 0, profiles, events: [], clients: new Set(), child: null };
+    const job = { id, status: 'running', progress: 0, profiles, outputTypes, events: [], clients: new Set(), child: null };
     jobs.set(id, job);
     json(response, 202, { id });
     startJob(job, config).catch(error => {
@@ -243,12 +258,13 @@ async function serveFile(response, filename, directory = publicDirectory) {
       '.css': 'text/css; charset=utf-8',
       '.js': 'text/javascript; charset=utf-8',
       '.svg': 'image/svg+xml',
+      '.png': 'image/png',
       '.mp4': 'video/mp4'
     };
     response.writeHead(200, {
       'Content-Type': contentTypes[extension] || 'application/octet-stream',
       'Content-Length': fileStat.size,
-      'Cache-Control': extension === '.mp4' ? 'private, max-age=300' : 'no-cache',
+      'Cache-Control': ['.mp4', '.png'].includes(extension) ? 'private, max-age=300' : 'no-cache',
       'X-Content-Type-Options': 'nosniff'
     });
     createReadStream(filePath).pipe(response);
@@ -260,7 +276,7 @@ async function serveFile(response, filename, directory = publicDirectory) {
 async function removeExpiredOutputs() {
   const now = Date.now();
   for (const entry of await readdir(outputDirectory, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.mp4')) continue;
+    if (!entry.isFile() || !/\.(mp4|png)$/i.test(entry.name)) continue;
     const filePath = path.join(outputDirectory, entry.name);
     const fileStat = await stat(filePath).catch(() => null);
     if (fileStat && now - fileStat.mtimeMs > expiryMilliseconds) await unlink(filePath).catch(() => {});

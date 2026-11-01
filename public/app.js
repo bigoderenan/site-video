@@ -9,6 +9,9 @@ const progressBar = document.querySelector('#progress-bar');
 const progressNumber = document.querySelector('#progress-number');
 const resultFiles = document.querySelector('#result-files');
 const expiry = document.querySelector('#expiry');
+const outputInputs = [...form.querySelectorAll('input[name="output"]')];
+const videoSettings = [...form.querySelectorAll('.video-setting')];
+const submitLabel = submitButton.querySelector('span');
 
 const apiUrl = relative => new URL(relative, window.location.href).toString();
 
@@ -38,10 +41,26 @@ function reset() {
   showState('idle');
 }
 
+function syncOutputOptions() {
+  const videoEnabled = outputInputs.some(input => input.value === 'video' && input.checked);
+  for (const setting of videoSettings) setting.hidden = !videoEnabled;
+  form.duration.disabled = !videoEnabled;
+  form.easing.disabled = !videoEnabled;
+  const screenshotEnabled = outputInputs.some(input => input.value === 'screenshot' && input.checked);
+  submitLabel.textContent = videoEnabled && screenshotEnabled
+    ? 'Gerar vídeos e capturas'
+    : videoEnabled ? 'Gerar vídeos' : 'Gerar capturas';
+}
+
+for (const input of outputInputs) input.addEventListener('change', syncOutputOptions);
+syncOutputOptions();
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
   const profiles = [...form.querySelectorAll('input[name="profile"]:checked')].map(input => input.value);
   if (!profiles.length) return alert('Selecione pelo menos um formato.');
+  const outputTypes = outputInputs.filter(input => input.checked).map(input => input.value);
+  if (!outputTypes.length) return alert('Selecione pelo menos um tipo de arquivo.');
   submitButton.disabled = true;
   showState('running');
   setProgress(2, 'Enviando a configuração…');
@@ -49,6 +68,7 @@ form.addEventListener('submit', async event => {
     url: normalizeUrl(form.url.value),
     name: form.name.value,
     profiles,
+    outputTypes,
     durationSeconds: Number(form.duration.value),
     easing: form.easing.value
   };
@@ -73,9 +93,11 @@ form.addEventListener('submit', async event => {
         link.className = 'file-link';
         link.href = apiUrl(file.url);
         link.download = file.filename;
-        const title = file.profile === 'desktop' ? 'Vídeo desktop' : 'Vídeo mobile';
+        const mode = file.profile === 'desktop' ? 'desktop' : 'mobile';
+        const title = file.type === 'screenshot' ? `Captura ${mode}` : `Vídeo ${mode}`;
         const dimensions = file.profile === 'desktop' ? '1920 × 1080' : '1080 × 1920';
-        link.innerHTML = `<span><strong>${title}</strong><small>${dimensions} · 60 FPS</small></span><span class="download-icon">↓</span>`;
+        const details = file.type === 'screenshot' ? `${dimensions} · PNG` : `${dimensions} · 60 FPS`;
+        link.innerHTML = `<span><strong>${title}</strong><small>${details}</small></span><span class="download-icon">↓</span>`;
         return link;
       }));
       const time = new Date(update.expiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

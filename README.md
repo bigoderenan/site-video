@@ -4,6 +4,10 @@ Reusable Playwright and FFmpeg workflow that opens a public web page, dismisses
 common cookie banners, performs a configurable scroll, and exports MP4
 deliverables for desktop and mobile.
 
+The web interface can also export PNG screenshots of the initial viewport in
+desktop (1920x1080) and mobile (1080x1920) modes. Video and screenshot outputs
+can be generated separately or in the same job.
+
 ## Requirements
 
 - Node.js 20+
@@ -42,6 +46,18 @@ Capture only one format:
 
 ```powershell
 pnpm run capture -- --config sites/default.json --profile mobile
+```
+
+Capture screenshots for both profiles:
+
+```powershell
+pnpm run capture -- --config sites/default.json --type screenshot
+```
+
+Generate video and screenshot files together:
+
+```powershell
+pnpm run capture -- --config sites/default.json --type video --type screenshot
 ```
 
 Capture another site using the built-in defaults:
