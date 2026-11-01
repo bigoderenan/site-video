@@ -249,7 +249,8 @@ async function captureProfile(browser, config, profileName, profile, directories
       size: {
         width: profile.captureWidth ?? viewportWidth,
         height: profile.captureHeight ?? viewportHeight
-      }
+      },
+      fps: config.fps
     };
   }
   const context = await browser.newContext(contextOptions);
