@@ -10,8 +10,9 @@ can be generated separately or in the same job.
 
 For desktop video, the web interface uses Chromium compositor screencasting by
 default. An advanced option allows Playwright's native recording to be
-selected instead. The same advanced section allows choosing 24, 30, or 60 FPS.
-Mobile video continues to use compositor screencasting.
+selected instead. The same advanced section accepts a custom integer frame rate
+from 1 to 120 FPS, defaulting to 60. Mobile video continues to use compositor
+screencasting.
 
 ## Requirements
 

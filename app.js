@@ -205,7 +205,11 @@ async function createJob(request, response) {
       : 'screencast';
     const durationSeconds = Math.round(Number(body.durationSeconds || 20));
     if (durationSeconds < 10 || durationSeconds > 60) throw new Error('A duração deve ficar entre 10 e 60 segundos.');
-    const fps = [24, 30, 60].includes(Number(body.fps)) ? Number(body.fps) : 60;
+    const requestedFps = Number(body.fps ?? 60);
+    if (!Number.isInteger(requestedFps) || requestedFps < 1 || requestedFps > 120) {
+      throw new Error('O FPS deve ser um número inteiro entre 1 e 120.');
+    }
+    const fps = requestedFps;
     const easing = ['easeInOutSine', 'easeInOutCubic', 'linear'].includes(body.easing) ? body.easing : 'easeInOutSine';
     const baseConfig = JSON.parse(await readFile(baseConfigPath, 'utf8'));
     const halfDuration = durationSeconds * 500;
