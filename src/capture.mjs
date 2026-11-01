@@ -64,7 +64,18 @@ async function loadConfig(args) {
   config.timeline ??= DEFAULT_TIMELINE;
   config.profiles ??= {
     desktop: { width: 1920, height: 1080, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-    mobile: { width: 1080, height: 1920, videoBorderPercent: 0.09, deviceScaleFactor: 1, isMobile: true, hasTouch: true }
+    mobile: {
+      width: 1080,
+      height: 1920,
+      videoViewportWidth: 393,
+      videoViewportHeight: 854,
+      videoCaptureWidth: 884,
+      videoCaptureHeight: 1920,
+      videoBorderHorizontalPercent: 0.09,
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true
+    }
   };
   return config;
 }
@@ -154,9 +165,10 @@ async function run(command, args) {
 }
 
 function buildVideoFilter(config, profile) {
-  const borderPercent = Math.max(0, Math.min(0.2, Number(profile.videoBorderPercent ?? 0)));
-  const contentWidth = Math.max(2, Math.floor(profile.width * (1 - borderPercent * 2) / 2) * 2);
-  const contentHeight = Math.max(2, Math.floor(profile.height * (1 - borderPercent * 2) / 2) * 2);
+  const horizontalBorder = Math.max(0, Math.min(0.2, Number(profile.videoBorderHorizontalPercent ?? 0)));
+  const verticalBorder = Math.max(0, Math.min(0.2, Number(profile.videoBorderVerticalPercent ?? 0)));
+  const contentWidth = Math.max(2, Math.floor(profile.width * (1 - horizontalBorder * 2) / 2) * 2);
+  const contentHeight = Math.max(2, Math.floor(profile.height * (1 - verticalBorder * 2) / 2) * 2);
   return [
     'setpts=PTS-STARTPTS',
     'tpad=stop_mode=clone:stop_duration=1',
@@ -287,6 +299,14 @@ async function captureProfile(browser, config, profileName, profile, directories
     return outputs;
   }
 
+  if (useScreencast && (profile.videoViewportWidth || profile.videoViewportHeight)) {
+    await page.setViewportSize({
+      width: profile.videoViewportWidth ?? viewportWidth,
+      height: profile.videoViewportHeight ?? viewportHeight
+    });
+    await delay(250);
+  }
+
   const captureStartSeconds = (performance.now() - recordingStartedAt) / 1000;
   console.log(`[${profileName}] Recording ${config.durationSeconds}s timeline`);
   const output = path.join(directories.output, `${config.name}-${profileName}-${profile.width}x${profile.height}-${config.fps}fps.mp4`);
@@ -306,8 +326,8 @@ async function captureProfile(browser, config, profileName, profile, directories
     await session.send('Page.startScreencast', {
       format: 'jpeg',
       quality: 95,
-      maxWidth: profile.captureWidth ?? profile.width,
-      maxHeight: profile.captureHeight ?? profile.height,
+      maxWidth: profile.videoCaptureWidth ?? profile.captureWidth ?? profile.width,
+      maxHeight: profile.videoCaptureHeight ?? profile.captureHeight ?? profile.height,
       everyNthFrame: 1
     });
     await playTimeline(page, config.timeline, config.durationSeconds);
