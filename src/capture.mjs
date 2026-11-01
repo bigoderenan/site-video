@@ -72,6 +72,9 @@ async function loadConfig(args) {
       videoCaptureWidth: 884,
       videoCaptureHeight: 1920,
       videoBorderHorizontalPercent: 0.09,
+      screenshotViewportWidth: 393,
+      screenshotViewportHeight: 854,
+      screenshotBorderHorizontalPercent: 0.09,
       deviceScaleFactor: 1,
       isMobile: true,
       hasTouch: true
@@ -218,9 +221,14 @@ async function transcodeFrames(framesDirectory, frameCount, output, config, prof
 
 async function normalizeScreenshot(input, output, profile) {
   const tempOutput = output.replace(/\.png$/i, '.tmp.png');
+  const horizontalBorder = Math.max(0, Math.min(0.2, Number(profile.screenshotBorderHorizontalPercent ?? 0)));
+  const verticalBorder = Math.max(0, Math.min(0.2, Number(profile.screenshotBorderVerticalPercent ?? 0)));
+  const contentWidth = Math.max(2, Math.floor(profile.width * (1 - horizontalBorder * 2) / 2) * 2);
+  const contentHeight = Math.max(2, Math.floor(profile.height * (1 - verticalBorder * 2) / 2) * 2);
+  const borderColor = horizontalBorder || verticalBorder ? 'black' : 'white';
   const filter = [
-    `scale=${profile.width}:${profile.height}:force_original_aspect_ratio=decrease:flags=lanczos`,
-    `pad=${profile.width}:${profile.height}:(ow-iw)/2:(oh-ih)/2:color=white`,
+    `scale=${contentWidth}:${contentHeight}:force_original_aspect_ratio=decrease:flags=lanczos`,
+    `pad=${profile.width}:${profile.height}:(ow-iw)/2:(oh-ih)/2:color=${borderColor}`,
     'setsar=1'
   ].join(',');
   await rm(tempOutput, { force: true });
@@ -277,6 +285,13 @@ async function captureProfile(browser, config, profileName, profile, directories
   const outputs = [];
 
   if (captureScreenshot) {
+    if (profile.screenshotViewportWidth || profile.screenshotViewportHeight) {
+      await page.setViewportSize({
+        width: profile.screenshotViewportWidth ?? viewportWidth,
+        height: profile.screenshotViewportHeight ?? viewportHeight
+      });
+      await delay(250);
+    }
     const rawScreenshot = path.join(rawDirectory, 'screenshot.raw.png');
     const screenshotOutput = path.join(directories.output, `${config.name}-${profileName}-${profile.width}x${profile.height}.png`);
     console.log(`[${profileName}] Screenshot ${path.basename(screenshotOutput)}`);

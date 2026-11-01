@@ -48,7 +48,8 @@ Mobile videos include a 9% black safe border on the left and right so their
 content remains visible inside the narrower reference device frame. The video
 viewport follows that narrower aspect ratio, preserving the content without
 adding borders above or below. The final deliverable remains 1080x1920.
-Desktop videos and screenshots are unchanged.
+Mobile screenshots use the same lateral safe border. Desktop videos and
+screenshots are unchanged.
 
 The mobile profile uses a 393x699 CSS viewport to trigger the site's real
 responsive layout and a 2.75x device scale factor to render at approximately
